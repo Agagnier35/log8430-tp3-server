@@ -1,8 +1,8 @@
 <html>
 <body>
-    <h2>Jersey RESTful Web Application!</h2>
-    <p><a href="rest">Jersey resource</a>
-    <p>Visit <a href="http://jersey.java.net">Project Jersey website</a>
-    for more information on Jersey!
+    <h2>LOG8430: TP3. REST Service!</h2>
+    <h1>Endpoints:</h1>
+    <p><a href="rest/invoice">Post: new invoices (require JSON)</a></p>
+    <p><a href="rest/top">Get: most bougth products </a></p>
 </body>
 </html>
