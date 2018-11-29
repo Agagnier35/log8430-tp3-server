@@ -9,14 +9,6 @@
             <param-name>jersey.config.server.provider.packages</param-name>
             <param-value>com.log8430.rest</param-value>
         </init-param>
-	    <init-param>
-		    <param-name>jersey.config.server.trace</param-name>
-		    <param-value>ALL</param-value>
-	    </init-param>
-	    <init-param>
-		    <param-name>jersey.config.server.logging.verbosity</param-name>
-		    <param-value>PAYLOAD_TEXT</param-value>
-	    </init-param>
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet-mapping>

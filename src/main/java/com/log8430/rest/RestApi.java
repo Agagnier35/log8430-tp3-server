@@ -11,6 +11,8 @@ import javax.ws.rs.core.Response;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.fpm.*;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 
 import com.datastax.driver.mapping.Mapper;
 import com.datastax.driver.mapping.MappingManager;
@@ -29,9 +31,13 @@ import static com.log8430.dao.CassandraTools.*;
  * Root resource (exposed at "hello" path)
  */
 @Path("/")
-public class RestApi {
+public class RestApi extends ResourceConfig {
 	private JavaSparkContext sc;
 	private Mapper<Product> productRepository;
+
+	public RestApi(){
+		register(JacksonFeature.class);
+	}
 
 	private void initSpark() {
 		System.out.println("----------------STARTED BUILD RESTAPI-------------------");
@@ -48,6 +54,7 @@ public class RestApi {
 	@POST
 	@Path("/invoice")
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response createInvoice(InvoiceJSON invoiceJSON) {
 		System.out.println("POST: " + invoiceJSON.toString());
 		try {
