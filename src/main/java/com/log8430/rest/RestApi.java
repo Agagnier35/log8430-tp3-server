@@ -37,6 +37,7 @@ public class RestApi extends ResourceConfig {
 
 	public RestApi(){
 		register(JacksonFeature.class);
+		System.out.println("--------------------------CONSTRUCTOR-----------------------------------");
 	}
 
 	private void initSpark() {
@@ -48,6 +49,7 @@ public class RestApi extends ResourceConfig {
 	}
 
 	private void stopSpark() {
+		System.out.println("----------------STOPPING CASSANDRA-------------------");
 		CassandraTools.stop();
 	}
 
@@ -65,6 +67,7 @@ public class RestApi extends ResourceConfig {
 					.map(ProductConverter::convert)
 					.collect(Collectors.toList());
 
+			System.out.println("--------------SAVE PRODUCTS---------------");
 			JavaRDD<Product> productJavaRDD = sc.parallelize(products);
 			javaFunctions(productJavaRDD)
 					.writerBuilder(KEYSPACE_NAME, PRODUCT_TABLE_NAME, mapToRow(Product.class))
@@ -74,6 +77,7 @@ public class RestApi extends ResourceConfig {
 					.map(InvoiceItemConverter::convert)
 					.collect(Collectors.toList());
 
+			System.out.println("--------------SAVE INVOICE---------------");
 			JavaRDD<InvoiceItem> invoicesRdd = sc.parallelize(invoices);
 			javaFunctions(invoicesRdd)
 					.writerBuilder(KEYSPACE_NAME, INVOICE_TABLE_NAME, mapToRow(InvoiceItem.class))
@@ -81,6 +85,7 @@ public class RestApi extends ResourceConfig {
 
 			return Response.status(201).entity(invoiceJSON).build();
 		} catch (Exception e) {
+			System.out.println(e.getMessage());
 			return Response.status(500).entity(e.getMessage()).build();
 		} finally {
 			stopSpark();
