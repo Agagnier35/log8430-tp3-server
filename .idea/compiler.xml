@@ -6,8 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="tp3" />
+        <module name="tp3-core" />
+        <module name="tp3core" />
+        <module name="tp3restApi" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="tp3-core" target="8" />
+    </bytecodeTargetLevel>
   </component>
 </project>
