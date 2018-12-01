@@ -9,11 +9,16 @@ import javax.ws.rs.core.Response;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
+import com.log8430.model.converter.ProductConverter;
+import com.log8430.model.entity.Product;
 import com.log8430.model.json.InvoiceJSON;
+import com.log8430.model.json.MostBoughtProductJSON;
 import com.log8430.sparkapps.SparkCreateInvoiceJob;
 import com.log8430.sparkapps.SparkGetMostBoughtProduct;
 import com.log8430.util.SparkThreadExceptionHandler;
 import com.log8430.util.SparkThreadFactory;
+
+import scala.Tuple2;
 
 /**
  * Root resource (exposed at "rest" path)
@@ -55,7 +60,7 @@ public class RestApi extends ResourceConfig {
 
 	@GET
 	@Path("/top")
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response getMostBoughtProduct() {
 		System.out.println("GET top");
 		try {
@@ -70,8 +75,10 @@ public class RestApi extends ResourceConfig {
 			if (t != null) {
 				return Response.status(500).entity(t.getStackTrace()).build();
 			}
-			System.out.println(job.response);
-			return Response.status(200).entity(job.response).build();
+			Tuple2<Product, Integer> top = job.response;
+			MostBoughtProductJSON mb = new MostBoughtProductJSON(ProductConverter.convertBack(top._1), top._2);
+
+			return Response.status(200).entity(mb).build();
 		} catch (Exception e) {
 			return Response.status(500).entity(e.getStackTrace()).build();
 		}

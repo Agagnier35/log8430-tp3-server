@@ -7,4 +7,8 @@ public class ProductConverter {
 	public static Product convert(ProductJSON json){
 		return new Product(json.getName(), json.getPrice());
 	}
+
+	public static ProductJSON convertBack(Product p){
+		return new ProductJSON(p.getProductname(), p.getPrice());
+	}
 }

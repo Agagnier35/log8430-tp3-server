@@ -24,6 +24,7 @@ public class SparkTools implements AutoCloseable {
 
 		String sparkIp = System.getProperty("spark.host.address");
 		String cassIp = System.getProperty("cassandra.host.address");
+		String debugMode = System.getProperty("debug.mode", "");
 
 		//This is the hacky way, the right way would be to build one uber-jar, but it doesnt work well with tomcat's classLoader
 		File jardir = new File(mainJar.toURI()).getParentFile();

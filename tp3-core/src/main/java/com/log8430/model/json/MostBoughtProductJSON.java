@@ -3,6 +3,7 @@ package com.log8430.model.json;
 import java.io.Serializable;
 
 public class MostBoughtProductJSON implements Serializable {
+	private static final long serialVersionUID = 7058444383647416343L;
 	private ProductJSON productJSON;
 	private int nbOfTimes;
 
