@@ -19,7 +19,6 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public class SparkCreateInvoiceJob implements Runnable {
-
 	private InvoiceJSON invoiceJSON;
 	private URL mainJar;
 

@@ -1,15 +1,11 @@
 package com.log8430.sparkapps;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.fpm.*;
-
-import com.datastax.driver.mapping.Mapper;
-import com.datastax.driver.mapping.MappingManager;
 
 import com.log8430.dao.SparkTools;
 import com.log8430.model.entity.InvoiceItem;
@@ -17,9 +13,7 @@ import com.log8430.model.entity.Product;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapRowTo;
-
-import static com.log8430.dao.SparkTools.INVOICE_TABLE_NAME;
-import static com.log8430.dao.SparkTools.KEYSPACE_NAME;
+import static com.log8430.dao.SparkTools.*;
 
 public class SparkGetMostBoughtProduct implements Runnable {
 	public String response;
@@ -34,19 +28,19 @@ public class SparkGetMostBoughtProduct implements Runnable {
 		try (SparkTools st = new SparkTools(mainJar)) {
 			JavaSparkContext sc = st.getSc();
 
-			MappingManager manager = st.getManager();
-			Mapper<Product> productRepository = manager.mapper(Product.class);
-
 			StringBuilder b = new StringBuilder();
+			b.append("CANCER MOST BOUGHT:\n\n\n\n\n");
 
 			JavaRDD<InvoiceItem> invoiceRDD = javaFunctions(sc)
 					.cassandraTable(KEYSPACE_NAME, INVOICE_TABLE_NAME, mapRowTo(InvoiceItem.class));
+			List<Product> products = javaFunctions(sc)
+					.cassandraTable(KEYSPACE_NAME, PRODUCT_TABLE_NAME, mapRowTo(Product.class)).collect();
 
-			JavaRDD<List<Product>> products = sc.parallelize(mapInvoiceToItems(invoiceRDD, productRepository));
+			JavaRDD<List<Product>> productsRDD = sc.parallelize(mapInvoiceToItems(invoiceRDD, products));
 			FPGrowth fpg = new FPGrowth()
 					.setMinSupport(0.2)
 					.setNumPartitions(10);
-			FPGrowthModel<Product> model = fpg.run(products);
+			FPGrowthModel<Product> model = fpg.run(productsRDD);
 
 			for (FPGrowth.FreqItemset<Product> itemset : model.freqItemsets().toJavaRDD().collect()) {
 				b.append("[" + itemset.javaItems() + "], " + itemset.freq()).append("\n");
@@ -57,22 +51,26 @@ public class SparkGetMostBoughtProduct implements Runnable {
 					: model.generateAssociationRules(minConfidence).toJavaRDD().collect()) {
 				b.append(rule.javaAntecedent() + " => " + rule.javaConsequent() + ", " + rule.confidence()).append("\n");
 			}
-
+			System.out.println(b.toString());
 			response = b.toString();
-		} catch (Exception e){
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	private static List<List<Product>> mapInvoiceToItems(JavaRDD<InvoiceItem> invoiceRDD, Mapper<Product> productRepository) {
+	private List<List<Product>> mapInvoiceToItems(JavaRDD<InvoiceItem> invoiceRDD, List<Product> products) {
 		List<List<Product>> productsMultiples = new ArrayList<>();
 		invoiceRDD.foreach(i -> {
 			List<Product> multiples = new ArrayList<>();
-			Product product = productRepository.get(i.getProductname());
-			for (int j = 0; j < i.getQuantity(); j++) {
-				multiples.add(product);
-			}
-			productsMultiples.add(multiples);
+			Optional<Product> matchingProduct = products.stream()
+					.filter(p -> p.getProductname().equals(i.getProductname()))
+					.findFirst();
+			matchingProduct.ifPresent(p -> {
+				for (int j = 0; j < i.getQuantity(); j++) {
+					multiples.add(p);
+				}
+				productsMultiples.add(multiples);
+			});
 		});
 		return productsMultiples;
 	}

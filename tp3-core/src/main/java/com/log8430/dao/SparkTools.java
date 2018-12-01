@@ -9,7 +9,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import com.datastax.driver.core.Session;
-import com.datastax.driver.mapping.MappingManager;
 import com.datastax.spark.connector.cql.CassandraConnector;
 
 public class SparkTools implements AutoCloseable {
@@ -17,7 +16,6 @@ public class SparkTools implements AutoCloseable {
 	public static final String INVOICE_TABLE_NAME = "invoiceitem";
 	public static final String PRODUCT_TABLE_NAME = "product";
 	public static final String APP_NAME = "FreqAssociation";
-	private MappingManager manager;
 	private Session session;
 	private JavaSparkContext sc;
 
@@ -38,6 +36,7 @@ public class SparkTools implements AutoCloseable {
 				.setMaster("spark://" + sparkIp + ":7077")
 				.set("spark.cassandra.connection.host", cassIp)
 				.set("spark.cassandra.connection.port", "9042")
+				.set("spark.local.dir", "/tmp")
 				.setJars(jars);
 		sc = new JavaSparkContext(conf);
 
@@ -46,7 +45,6 @@ public class SparkTools implements AutoCloseable {
 		createKeyspace(KEYSPACE_NAME, "SimpleStrategy", 1);
 		createProductTable();
 		createInvoiceItemTable();
-		manager = new MappingManager(session);
 
 		System.out.println("----------------END SPARK CONF-------------------");
 	}
@@ -105,9 +103,5 @@ public class SparkTools implements AutoCloseable {
 
 	public JavaSparkContext getSc() {
 		return sc;
-	}
-
-	public MappingManager getManager() {
-		return manager;
 	}
 }

@@ -12,6 +12,8 @@ import org.glassfish.jersey.server.ResourceConfig;
 import com.log8430.model.json.InvoiceJSON;
 import com.log8430.sparkapps.SparkCreateInvoiceJob;
 import com.log8430.sparkapps.SparkGetMostBoughtProduct;
+import com.log8430.util.SparkThreadExceptionHandler;
+import com.log8430.util.SparkThreadFactory;
 
 /**
  * Root resource (exposed at "rest" path)
@@ -19,7 +21,7 @@ import com.log8430.sparkapps.SparkGetMostBoughtProduct;
 @Path("/")
 public class RestApi extends ResourceConfig {
 
-	public static final String MAIN_JAR_LOCATION = "/WEB-INF/uberJar/tp3-core.jar";
+	public static final String MAIN_JAR_LOCATION = "/WEB-INF/lib/tp3-core-1.0-SNAPSHOT.jar";
 
 	public RestApi() {
 		register(JacksonFeature.class);
@@ -33,22 +35,21 @@ public class RestApi extends ResourceConfig {
 		System.out.println("POST: " + invoiceJSON.toString());
 
 		try {
-			URL mainJar = ServletContextHolder.context.getResource("/WEB-INF/lib/tp3-core-1.0-SNAPSHOT.jar");
-			if(mainJar == null){
+			URL mainJar = ServletContextHolder.context.getResource(MAIN_JAR_LOCATION);
+			if (mainJar == null) {
 				throw new Exception("Missing main jar");
 			}
 
-			Thread t = new Thread(new SparkCreateInvoiceJob(invoiceJSON, mainJar));
-			System.out.println("------------T Start----------------");
-			t.start();
+			SparkCreateInvoiceJob job = new SparkCreateInvoiceJob(invoiceJSON, mainJar);
+			Throwable t = runSparkThread(job);
 
-			t.join();//blocks and wait
-			System.out.println("------------T stop----------------");
+			if (t != null) {
+				return Response.status(500).entity(t.getStackTrace()).build();
+			}
 
 			return Response.status(201).entity(invoiceJSON).build();
 		} catch (Exception e) {
-			e.printStackTrace();
-			return Response.status(500).entity(e.getMessage()).build();
+			return Response.status(500).entity(e.getStackTrace()).build();
 		}
 	}
 
@@ -59,17 +60,37 @@ public class RestApi extends ResourceConfig {
 		System.out.println("GET top");
 		try {
 			URL mainJar = ServletContextHolder.context.getResource(MAIN_JAR_LOCATION);
+			if (mainJar == null) {
+				throw new Exception("Missing main jar");
+			}
+
 			SparkGetMostBoughtProduct job = new SparkGetMostBoughtProduct(mainJar);
-			Thread t = new Thread(job);
-			System.out.println("------------T Start----------------");
-			t.start();
+			Throwable t = runSparkThread(job);
 
-			t.join();//blocks and wait
-			System.out.println("------------T stop----------------");
-
+			if (t != null) {
+				return Response.status(500).entity(t.getStackTrace()).build();
+			}
+			System.out.println(job.response);
 			return Response.status(200).entity(job.response).build();
 		} catch (Exception e) {
-			return Response.status(500).entity(e.getMessage()).build();
+			return Response.status(500).entity(e.getStackTrace()).build();
+		}
+	}
+
+	private Throwable runSparkThread(Runnable job) {
+		try {
+			System.out.println("------------T Start----------------");
+
+			SparkThreadExceptionHandler handler = new SparkThreadExceptionHandler();
+			SparkThreadFactory factory = new SparkThreadFactory(handler);
+
+			Thread t = factory.newThread(job);
+			t.start();
+			t.join();//blocks and wait
+			System.out.println("------------T stop----------------");
+			return handler.t;
+		} catch (Exception e) {
+			return e;
 		}
 	}
 }
